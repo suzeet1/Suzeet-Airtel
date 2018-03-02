@@ -1,0 +1,66 @@
+#!/bin/bash
+rbd map eaaprod-proptima-rawdata-pm-shard-core-wb  --pool  NFSgeneralpurpose -m 10.3.166.131 --name client.admin --keyring /etc/ceph/ceph.client.admin.keyring
+sleep 2
+rbd map  eaaprod-proptima-etl-pm-shard-core-wb   --pool  NFSgeneralpurpose -m 10.3.166.131 --name client.admin --keyring /etc/ceph/ceph.client.admin.keyring
+sleep 2
+rbd map  eaaprod-proptima-flatfiles-pm-shard-core-wb  --pool   NFSflatfiles  -m 10.3.166.131 --name client.admin --keyring /etc/ceph/ceph.client.admin.keyring
+sleep 2
+rbd map   eaaprod-proptima-joram-pm-shard-core-wb   --pool   DirectRBD   -m 10.3.166.131 --name client.admin --keyring /etc/ceph/ceph.client.admin.keyring
+sleep 2
+
+rbd map  eaaprod-proptima-rawdata-pm-shard-core-ni  --pool  NFSgeneralpurpose -m 10.3.166.131 --name client.admin --keyring /etc/ceph/ceph.client.admin.keyring
+sleep 2
+rbd map   eaaprod-proptima-etl-pm-shard-core-ni   --pool  NFSgeneralpurpose -m 10.3.166.131 --name client.admin --keyring /etc/ceph/ceph.client.admin.keyring
+sleep 2
+rbd map   eaaprod-proptima-flatfiles-pm-shard-core-ni  --pool   NFSflatfiles  -m 10.3.166.131 --name client.admin --keyring /etc/ceph/ceph.client.admin.keyring
+sleep 2
+rbd map    eaaprod-proptima-joram-pm-shard-core-ni    --pool   DirectRBD   -m 10.3.166.131 --name client.admin --keyring /etc/ceph/ceph.client.admin.keyring
+sleep 2
+
+
+
+mkfs.xfs /dev/rbd/NFSgeneralpurpose/eaaprod-proptima-rawdata-pm-shard-core-wb
+sleep 20
+mkfs.xfs /dev/rbd/NFSgeneralpurpose/eaaprod-proptima-etl-pm-shard-core-wb
+sleep 20
+mkfs.xfs /dev/rbd/NFSflatfiles/eaaprod-proptima-flatfiles-pm-shard-core-wb
+sleep 20
+mkfs.xfs /dev/rbd/DirectRBD/eaaprod-proptima-joram-pm-shard-core-wb
+sleep 20
+
+mkfs.xfs /dev/rbd/NFSgeneralpurpose/eaaprod-proptima-rawdata-pm-shard-core-ni
+sleep 20
+mkfs.xfs /dev/rbd/NFSgeneralpurpose/eaaprod-proptima-etl-pm-shard-core-ni
+sleep 20
+mkfs.xfs /dev/rbd/NFSflatfiles/eaaprod-proptima-flatfiles-pm-shard-core-ni
+sleep 20
+mkfs.xfs /dev/rbd/DirectRBD/eaaprod-proptima-joram-pm-shard-core-ni
+sleep 20
+
+mkdir  -p /eaaprod/{proptima-rawdata-shard-core-wb,proptima-etl-shard-core-wb,proptima-flatfiles-shard-core-wb,proptima-rawdata-shard-core-ni,proptima-etl-shard-core-ni,proptima-flatfiles-shard-core-ni}
+chmod -R 777 /eaaprod/
+ls -l /eaaprod/
+
+mount  /dev/rbd/NFSgeneralpurpose/eaaprod-proptima-rawdata-pm-shard-core-wb  /eaaprod/proptima-rawdata-shard-core-wb
+mount  /dev/rbd/NFSgeneralpurpose/eaaprod-proptima-etl-pm-shard-core-wb  /eaaprod/proptima-etl-shard-core-wb
+mount  /dev/rbd/NFSflatfiles/eaaprod-proptima-flatfiles-pm-shard-core-wb  /eaaprod/proptima-flatfiles-shard-core-wb
+
+
+mount /dev/rbd/NFSgeneralpurpose/eaaprod-proptima-rawdata-pm-shard-core-ni  /eaaprod/proptima-rawdata-shard-core-ni
+mount  /dev/rbd/NFSgeneralpurpose/eaaprod-proptima-etl-pm-shard-core-ni     /eaaprod/proptima-etl-shard-core-ni
+mount /dev/rbd/NFSflatfiles/eaaprod-proptima-flatfiles-pm-shard-core-ni     /eaaprod/proptima-flatfiles-shard-core-ni
+
+df -h | grep -i /eaaprod/proptima
+cat /etc/exports
+showmount -e
+cp /etc/exports /var/tmp/
+
+echo "/eaaprod/proptima-rawdata-shard-core-wb  *(rw,sync,insecure,no_root_squash,no_subtree_chewb,nohide)"   >>/etc/exports
+echo "/eaaprod/proptima-etl-shard-core-wb  *(rw,sync,insecure,no_root_squash,no_subtree_chewb,nohide)"   >>/etc/exports
+echo "/eaaprod/proptima-flatfiles-shard-core-wb  *(rw,sync,insecure,no_root_squash,no_subtree_chewb,nohide)"   >>/etc/exports
+
+echo "/eaaprod/proptima-rawdata-shard-core-ni  *(rw,sync,insecure,no_root_squash,no_subtree_chewb,nohide)"   >>/etc/exports
+echo "/eaaprod/proptima-etl-shard-core-ni  *(rw,sync,insecure,no_root_squash,no_subtree_chewb,nohide)"   >>/etc/exports
+echo "/eaaprod/proptima-flatfiles-shard-core-ni  *(rw,sync,insecure,no_root_squash,no_subtree_chewb,nohide)"   >>/etc/exports
+exportfs -rv
+showmount -e
