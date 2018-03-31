@@ -1,1 +1,6 @@
 openstack server list -c Name -c Networks -c Status | egrep -i "mobinet_prod_vlan178|mobinet_prod_vlan179"  | egrep -iv "test|SHUTOFF|error"   |  sed -e 's/[[:space:]]//gi' | awk -F "|" '{print $2", "$3", "$4}'
+
+########################################Ansible route Add#######################################################
+ansible all -m shell -a "ip route add 10.3.150.21 via 10.3.166.1 dev bond2.105"  -i cephip -u root -k
+SSH password:
+#################################################################################################
