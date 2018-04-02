@@ -1,0 +1,3 @@
+HOw to find this My packet is going which interface..
+
+tcpdump -pni eno2 'icmp'
