@@ -1,3 +1,6 @@
+#############Cp in one line ####################################
+d_status]$ cp ctrl_bond_status.sh{,-`date +%F`}
+
 =================================================================================================
 # How to increase quota value..
 Manage Compute service quotas
