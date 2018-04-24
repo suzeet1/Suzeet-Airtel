@@ -6,3 +6,90 @@ d_status]$ cp ctrl_bond_status.sh{,-`date +%F`}
 Manage Compute service quotas
 https://docs.openstack.org/nova/pike/admin/quotas.html
 ==========================================================================================================
+[root@m1pl-pa-mon03 ~]# ssh admin@10.3.160.61
+Cisco UCS 6300 Series Fabric Interconnect
+Password:
+Cisco Nexus Operating System (NX-OS) Software
+TAC support: http://www.cisco.com/tac
+Copyright (c) 2009, Cisco Systems, Inc. All rights reserved.
+The copyrights to certain works contained in this software are
+owned by other third parties and used and distributed under
+license. Certain components of this software are licensed under
+the GNU General Public License (GPL) version 2.0 or the GNU
+Lesser General Public License (LGPL) Version 2.1. A copy of each
+such license is available at
+http://www.opensource.org/licenses/gpl-2.0.php and
+http://www.opensource.org/licenses/lgpl-2.1.php
+
+fabricA-B# scope fabric-interconnect a
+fabricA-B /fabric-interconnect # scope cha
+chassis          chassis-profile
+
+fabricA-B /fabric-interconnect # scope chassis 1
+fabricA-B /chassis #
+fabricA-B /chassis #
+fabricA-B /chassis # show
+adapter                  assoc                    detail                   environment              event                    fabric                   fan-module
+fault                    fault-suppress-task      fi-iom                   firmware                 fsm                      health-led               inventory
+iom                      locator-led              post                     power-budget             power-measured           psu                      psu-control
+raid-controller          sas-expander             server                   ses-enclosure            sioc                     slot                     stats
+status                   storage-enclosure        version                  virtual-drive-container
+
+fabricA-B /chassis # show server detail |grep -i sn
+    Serial (SN): FCH21197YV8
+    Serial (SN): FCH21197YGA
+    Serial (SN): FCH21107PMY
+    Serial (SN): FCH21197YYC
+    Serial (SN): FCH21197YT2
+fabricA-B /chassis # show server detail |grep -i FCH21197Y56
+fabricA-B /chassis # exit
+fabricA-B# scope cha
+chassis          chassis-profile
+
+fabricA-B# scope chassis
+chassis          chassis-profile
+
+fabricA-B# scope chassis 2
+fabricA-B /chassis # show server detail |grep -i FCH21197Y56
+fabricA-B /chassis # exit
+fabricA-B# scope chassis 3
+fabricA-B /chassis # show server detail |grep -i FCH21197Y56
+    Serial (SN): FCH21197Y56
+fabricA-B /chassis # de
+decommission  delete
+
+fabricA-B /chassis # show detail
+
+Chassis:
+    Chassis: 3
+    User Label:
+    Chassis Profile:
+    Overall Status: Operable
+    Oper qualifier: N/A
+    Operability: Operable
+    Conf State: Ok
+    Admin State: Acknowledged
+    Conn Path: A,B
+    Conn Status: A,B
+    Managing Instance: B
+    Product Name: Cisco UCS 5108 AC2 Chassis
+    PID: UCSB-5108-AC2
+    VID: V04
+    Part Number: 68-5091-05
+    Vendor: Cisco Systems Inc
+    Model: UCSB-5108-AC2
+    Serial (SN): FOX2115PTJ3
+    HW Revision: 0
+    Mfg Date: 2017-03-13T00:00:00.000
+    Power State: Ok
+    Thermal Status: Ok
+    SEEPROM operability status: Operable
+    Dynamic Reallocation: Chassis
+    Reserved Power Budget (W): 600
+    PSU Capacity (W): 5472
+    PSU Line Mode: High Line
+    PSU State: Ok
+    Current Task 1:
+    Current Task 2:
+fabricA-B /chassis #
+####################################################################################################
