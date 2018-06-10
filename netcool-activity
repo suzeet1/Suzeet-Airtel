@@ -1,0 +1,182 @@
+[stack@director ~]$ nova list | grep -i mnvl-netcool-colle-obj01
+| 9daa9a61-dc4a-40b3-8c3d-122ace5d9000 | mnvl-netcool-colle-obj01                                      | ACTIVE  | -          | Running     | netcoolprod_vlan112=10.3.170.64                                                                                                                                                                                                                    |
+[stack@director ~]$ nova  show mnvl-netcool-colle-obj01 | egrep -i "hypervisor_hostname|instance_name|flavor|attached"
+| OS-EXT-SRV-ATTR:hypervisor_hostname  | m1pl-pa-comp0-7.stack.enoc-airtel.com                                                                                                                            |
+| OS-EXT-SRV-ATTR:instance_name        | instance-00000e3f                                                                                                                                                |
+| flavor                               | netcool_prod_omnibus_disp_obj_server (f59d36fa-1dce-48fb-992f-b6b613128c89)                                                                                      |
+| os-extended-volumes:volumes_attached | [{"id": "cd5debcf-808f-4838-ab41-fe3c4a56ac4f", "delete_on_termination": false}, {"id": "e47e6dc1-7cc3-4c1d-add2-0a128943684b", "delete_on_termination": false}] |
+
+[stack@director ~]$ openstack server group show mnvl-netcool-colle-obj
++----------+----------------------------------------------------------------------------+
+| Field    | Value                                                                      |
++----------+----------------------------------------------------------------------------+
+| id       | 99536fca-2da0-4182-96e6-d7c23f723697                                       |
+| members  | 9daa9a61-dc4a-40b3-8c3d-122ace5d9000, e5e1c00e-05ca-434c-b895-0a32fe667c06 |
+| name     | mnvl-netcool-colle-obj                                                     |
+| policies | anti-affinity                                                              |
++----------+----------------------------------------------------------------------------+
+[stack@director ~]$
+
+[stack@director ~]$ openstack flavor create --ram 24576 --vcpus 8   mnvl-netcool-colle-obj01-flavor   --public
++----------------------------+--------------------------------------+
+| Field                      | Value                                |
++----------------------------+--------------------------------------+
+| OS-FLV-DISABLED:disabled   | False                                |
+| OS-FLV-EXT-DATA:ephemeral  | 0                                    |
+| disk                       | 0                                    |
+| id                         | ea7dcaf4-6274-4a39-a72a-25c982d5ff39 |
+| name                       | mnvl-netcool-colle-obj01-flavor      |
+| os-flavor-access:is_public | True                                 |
+| properties                 |                                      |
+| ram                        | 24576                                |
+| rxtx_factor                | 1.0                                  |
+| swap                       |                                      |
+| vcpus                      | 8                                    |
++----------------------------+--------------------------------------+
+[stack@director ~]$
+
+[stack@director ~]$ cinder snapshot-create  cd5debcf-808f-4838-ab41-fe3c4a56ac4f     --name  mnvl-netcool-colle-obj01-MIG_vda --force True
++-------------+--------------------------------------+
+| Property    | Value                                |
++-------------+--------------------------------------+
+| created_at  | 2018-05-21T18:45:56.258688           |
+| description | None                                 |
+| id          | 3c2d0d54-b15d-4428-98d6-a21747606b6d |
+| metadata    | {}                                   |
+| name        | mnvl-netcool-colle-obj01-MIG_vda     |
+| size        | 50                                   |
+| status      | creating                             |
+| updated_at  | None                                 |
+| volume_id   | cd5debcf-808f-4838-ab41-fe3c4a56ac4f |
++-------------+--------------------------------------+
+[stack@director ~]$ cinder snapshot-list | grep  3c2d0d54-b15d-4428-98d6-a21747606b6d
+| 3c2d0d54-b15d-4428-98d6-a21747606b6d | cd5debcf-808f-4838-ab41-fe3c4a56ac4f | available | mnvl-netcool-colle-obj01-MIG_vda                                     | 50   |
+[stack@director ~]$
+
+
+
+#####################################################Instance-Create=======================
+
+vm name= mnvl-netcool-colle-obj01-MIG
+flavor  = mnvl-netcool-colle-obj01 
+server group= 99536fca-2da0-4182-96e6-d7c23f723697  
+ snapshot-name=  3c2d0d54-b15d-4428-98d6-a21747606b6d 
+ ========================================================================================
+ 
+ [stack@director ~]$ nova list | grep -i mnvl-netcool-colle-obj01
+| 9daa9a61-dc4a-40b3-8c3d-122ace5d9000 | mnvl-netcool-colle-obj01                                      | SHUTOFF | -          | Shutdown    | netcoolprod_vlan112=10.3.170.64                                                                                                                                                                                                                    |
+| 475f6dc0-697b-41ea-9bee-47028ae62c5c | mnvl-netcool-colle-obj01-MIG                                  | SHUTOFF | -          | Shutdown    | netcoolprod_vlan112=10.3.170.111                                                                                                                                                                                                                   |
+[stack@director ~]$  nova volume-attachments 9daa9a61-dc4a-40b3-8c3d-122ace5d9000
++--------------------------------------+----------+--------------------------------------+--------------------------------------+
+| ID                                   | DEVICE   | SERVER ID                            | VOLUME ID                            |
++--------------------------------------+----------+--------------------------------------+--------------------------------------+
+| cd5debcf-808f-4838-ab41-fe3c4a56ac4f | /dev/vda | 9daa9a61-dc4a-40b3-8c3d-122ace5d9000 | cd5debcf-808f-4838-ab41-fe3c4a56ac4f |
+| e47e6dc1-7cc3-4c1d-add2-0a128943684b | /dev/vdc | 9daa9a61-dc4a-40b3-8c3d-122ace5d9000 | e47e6dc1-7cc3-4c1d-add2-0a128943684b |
++--------------------------------------+----------+--------------------------------------+--------------------------------------+
+[stack@director ~]$  nova volume-attachments 475f6dc0-697b-41ea-9bee-47028ae62c5c
++--------------------------------------+----------+--------------------------------------+--------------------------------------+
+| ID                                   | DEVICE   | SERVER ID                            | VOLUME ID                            |
++--------------------------------------+----------+--------------------------------------+--------------------------------------+
+| c2194688-bf8e-44f1-872e-eadbe69fb69b | /dev/vda | 475f6dc0-697b-41ea-9bee-47028ae62c5c | c2194688-bf8e-44f1-872e-eadbe69fb69b |
++--------------------------------------+----------+--------------------------------------+--------------------------------------+
+[stack@director ~]$  nova   volume-detach 9daa9a61-dc4a-40b3-8c3d-122ace5d9000 e47e6dc1-7cc3-4c1d-add2-0a128943684b
+[stack@director ~]$ nova    volume-attach  475f6dc0-697b-41ea-9bee-47028ae62c5c e47e6dc1-7cc3-4c1d-add2-0a128943684b
++----------+--------------------------------------+
+| Property | Value                                |
++----------+--------------------------------------+
+| device   | /dev/vdb                             |
+| id       | e47e6dc1-7cc3-4c1d-add2-0a128943684b |
+| serverId | 475f6dc0-697b-41ea-9bee-47028ae62c5c |
+| volumeId | e47e6dc1-7cc3-4c1d-add2-0a128943684b |
++----------+--------------------------------------+
+[stack@director ~]$  nova interface-list mnvl-netcool-colle-obj01
++------------+--------------------------------------+--------------------------------------+--------------+-------------------+
+| Port State | Port ID                              | Net ID                               | IP addresses | MAC Addr          |
++------------+--------------------------------------+--------------------------------------+--------------+-------------------+
+| ACTIVE     | 524fd666-1863-416f-95ad-3163055bbb08 | 7f9c62d1-0df3-4857-be93-99358cb32611 | 10.3.170.64  | fa:16:3e:0c:d0:f7 |
++------------+--------------------------------------+--------------------------------------+--------------+-------------------+
+[stack@director ~]$  nova interface-list mnvl-netcool-colle-obj01-MIG
++------------+--------------------------------------+--------------------------------------+--------------+-------------------+
+| Port State | Port ID                              | Net ID                               | IP addresses | MAC Addr          |
++------------+--------------------------------------+--------------------------------------+--------------+-------------------+
+| ACTIVE     | 647aafe7-7f57-426f-826c-142546686fc3 | 7f9c62d1-0df3-4857-be93-99358cb32611 | 10.3.170.111 | fa:16:3e:e8:94:cb |
++------------+--------------------------------------+--------------------------------------+--------------+-------------------+
+[stack@director ~]$  neutron port-show  524fd666-1863-416f-95ad-3163055bbb08
++-----------------------+------------------------------------------------------------------------------------+
+| Field                 | Value                                                                              |
++-----------------------+------------------------------------------------------------------------------------+
+| admin_state_up        | True                                                                               |
+| allowed_address_pairs |                                                                                    |
+| binding:host_id       | m1pl-pa-comp0-7.stack.enoc-airtel.com                                              |
+| binding:profile       | {}                                                                                 |
+| binding:vif_details   | {"port_filter": true, "ovs_hybrid_plug": true}                                     |
+| binding:vif_type      | ovs                                                                                |
+| binding:vnic_type     | normal                                                                             |
+| created_at            | 2018-04-13T03:45:59Z                                                               |
+| description           |                                                                                    |
+| device_id             | 9daa9a61-dc4a-40b3-8c3d-122ace5d9000                                               |
+| device_owner          | compute:netcool                                                                    |
+| extra_dhcp_opts       |                                                                                    |
+| fixed_ips             | {"subnet_id": "3dfd09e5-edc8-4e2d-b985-de888e118da4", "ip_address": "10.3.170.64"} |
+| id                    | 524fd666-1863-416f-95ad-3163055bbb08                                               |
+| mac_address           | fa:16:3e:0c:d0:f7                                                                  |
+| name                  |                                                                                    |
+| network_id            | 7f9c62d1-0df3-4857-be93-99358cb32611                                               |
+| port_security_enabled | True                                                                               |
+| project_id            | 1b6c62dd0a6a4f7c8917304292298cb0                                                   |
+| qos_policy_id         |                                                                                    |
+| revision_number       | 23                                                                                 |
+| security_groups       | c44dad7e-6a75-41e1-a600-95ede8c1cfa4                                               |
+| status                | ACTIVE                                                                             |
+| tenant_id             | 1b6c62dd0a6a4f7c8917304292298cb0                                                   |
+| updated_at            | 2018-05-12T04:06:24Z                                                               |
++-----------------------+------------------------------------------------------------------------------------+
+[stack@director ~]$ nova    interface-detach 9daa9a61-dc4a-40b3-8c3d-122ace5d9000 524fd666-1863-416f-95ad-3163055bbb08
+[stack@director ~]$ nova    interface-detach 475f6dc0-697b-41ea-9bee-47028ae62c5c 647aafe7-7f57-426f-826c-142546686fc3
+[stack@director ~]$  neutron port-create --fixed-ip subnet_id=3dfd09e5-edc8-4e2d-b985-de888e118da4,ip_address=10.3.170.64 --mac-address  fa:16:3e:0c:d0:f7      --name mnvl-netcool-colle-obj01-MIG-nic1 7f9c62d1-0df3-4857-be93-99358cb32611
+Created a new port:
++-----------------------+------------------------------------------------------------------------------------+
+| Field                 | Value                                                                              |
++-----------------------+------------------------------------------------------------------------------------+
+| admin_state_up        | True                                                                               |
+| allowed_address_pairs |                                                                                    |
+| binding:host_id       |                                                                                    |
+| binding:profile       | {}                                                                                 |
+| binding:vif_details   | {}                                                                                 |
+| binding:vif_type      | unbound                                                                            |
+| binding:vnic_type     | normal                                                                             |
+| created_at            | 2018-05-21T18:57:57Z                                                               |
+| description           |                                                                                    |
+| device_id             |                                                                                    |
+| device_owner          |                                                                                    |
+| extra_dhcp_opts       |                                                                                    |
+| fixed_ips             | {"subnet_id": "3dfd09e5-edc8-4e2d-b985-de888e118da4", "ip_address": "10.3.170.64"} |
+| id                    | 618f0442-175c-428c-bc54-6ae4d97b0ac7                                               |
+| mac_address           | fa:16:3e:0c:d0:f7                                                                  |
+| name                  | mnvl-netcool-colle-obj01-MIG-nic1                                                  |
+| network_id            | 7f9c62d1-0df3-4857-be93-99358cb32611                                               |
+| port_security_enabled | True                                                                               |
+| project_id            | 1b6c62dd0a6a4f7c8917304292298cb0                                                   |
+| qos_policy_id         |                                                                                    |
+| revision_number       | 5                                                                                  |
+| security_groups       | c44dad7e-6a75-41e1-a600-95ede8c1cfa4                                               |
+| status                | DOWN                                                                               |
+| tenant_id             | 1b6c62dd0a6a4f7c8917304292298cb0                                                   |
+| updated_at            | 2018-05-21T18:57:58Z                                                               |
++-----------------------+------------------------------------------------------------------------------------+
+[stack@director ~]$ nova interface-attach 475f6dc0-697b-41ea-9bee-47028ae62c5c --port-id 618f0442-175c-428c-bc54-6ae4d97b0ac7
+[stack@director ~]$ nova start 475f6dc0-697b-41ea-9bee-47028ae62c5c
+Request to start server 475f6dc0-697b-41ea-9bee-47028ae62c5c has been accepted.
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
