@@ -1,0 +1,18 @@
+#!/bin/bash
+
+mkdir /var/tmp/swap
+free -g | tee /var/tmp/swap/before-free-g
+swapoff /dev/mapper/rhel-lv_swap
+cp /etc/fstab /var/tmp/swap/fstab
+sed -i '/[/]rhel-lv_swap swap / s/^/#/' /etc/fstab
+df -h |tee /var/tmp/swap/before-df-h
+lvremove /dev/mapper/rhel-lv_swap -y
+lvextend -L +15G /dev/mapper/rhel-lv_home
+xfs_growfs /home/
+
+df -h |tee /var/tmp/swap/after-df-h
+free -g | tee /var/tmp/swap/after-free-g
+sed -i 's/rd.lvm.lv=rhel\/lv_swap//g' /etc/default/grub
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+init 6
