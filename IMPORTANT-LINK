@@ -1,3 +1,9 @@
+Connecting OpenStack instances directly to an external network with Neutron 
+
+
+https://access.redhat.com/solutions/648863
+=====================================================================================================
+
 #############Cp in one line ####################################
 d_status]$ cp ctrl_bond_status.sh{,-`date +%F`}
 
