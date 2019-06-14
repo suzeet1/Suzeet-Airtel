@@ -18,3 +18,25 @@
         group: root
 [root@jump-server mobinet]#
 ===================================================================
+
+ crudini --set /etc/cinder/cinder.conf DEFAULT debug true
+ cat /etc/cinder/cinder.conf | egrep -v "^#|^$"
+ cat /etc/cinder/cinder.conf | egrep -v "^#|^$" | grep "^debug"
+ sudo pcs status
+ pcs resource restart openstack-cinder-volume
+ systemctl status openstack-cinder-volume
+ systemctl status | grep cinder
+ systemctl restart openstack-cinder-scheduler.service
+ systemctl restart openstack-cinder-api.service
+ systemctl status openstack-cinder-api.service
+ systemctl status openstack-cinder-scheduler.service
+ crudini --set /etc/cinder/cinder.conf DEFAULT debug false
+ cat /etc/cinder/cinder.conf | grep "^debug"
+ pcs status
+ pcs resource restart openstack-cinder-volume
+ systemctl status | grep cinder
+ systemctl restart openstack-cinder-api.service
+ systemctl restart openstack-cinder-scheduler.service
+ systemctl status openstack-cinder-scheduler.service
+ systemctl status openstack-cinder-api.service
+ systemctl status openstack-cinder-volume
