@@ -1,0 +1,133 @@
+#!/bin/bash
+
+## Script to list volumes which fall under scenario one
+# - This volume was not created from a snapshot.
+# - No snapshot was created from this volume.
+# - The volume is in available state."
+source /home/stack/overcloudrc;
+volume_status="";
+volume_source_snapshot="";
+volume_id="";
+> /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_snapshot.csv
+> /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_volume.csv
+> /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume.csv
+> /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume_with_no_source_snapshot.csv
+> /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume_with_source_snapshot.csv
+> /home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_one_volume.csv
+> /home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_two_volume.csv
+> /home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_three_snapshot.csv
+
+#To list out all volumes in openstack environment
+#echo -e "Volume_ID,Volume_Status,Volume_Size,Volume_Details\n$(openstack volume list -f value -c ID -c Size -c 'Attached to' -c Status | awk '{print $1","$2","$3","$4" "$5" "$6" "$7" "$8}')" > /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_volume.csv
+echo -e "\nGenerating complete volume list, please wait...\n";
+sleep 2;
+echo -e "$(openstack volume list -f value -c ID -c Size -c 'Attached to' -c Status | awk '{print $1","$2","$3","$4" "$5" "$6" "$7" "$8}')" | tee -a /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_volume.csv
+echo -e "\nFormatting the complete volume list, please wait...";
+sleep 2;
+vol_id=""
+source_snapshot_id=""
+while read volume_details
+do
+				vol_id=`echo $volume_details | awk -F',' '{print $1}'`;
+				source_snapshot_id=`openstack volume show $vol_id -f value -c snapshot_id`;
+				sed -i -e "/$vol_id/s/$/,$source_snapshot_id/" /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_volume.csv;
+done < /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_volume.csv;
+#echo "Formated output of all volumes are stored at: /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_volume.csv"
+
+#To list out all snapshots in openstack environment
+
+#echo -e "Snapshot_ID,Snapshot_Status,Snapshot_Size\n$(openstack snapshot list -f value -c ID -c Status -c Size | awk '{print $1","$2","$3}')" >  /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_snapshot.csv
+echo -e "\nGenerating complete Snapshot list, please wait....\n";
+sleep 2;
+echo -e "$(openstack snapshot list -f value -c ID -c Status -c Size | awk '{print $1","$2","$3}')" | tee -a /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_snapshot.csv
+echo -e "\nFormatting the complete Snapshot list, please wait....";
+sleep 2;
+snapshot_id=""
+source_vol_id=""
+while read snapshot_details;do
+				snapshot_id=`echo $snapshot_details | awk -F',' '{print $1}'`;
+				source_vol_id=`openstack snapshot show $snapshot_id -f value -c volume_id`;
+				sed -i -e "/$snapshot_id/s/$/,$source_vol_id/" /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_snapshot.csv;
+done < /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_snapshot.csv;
+#echo "Formated output of all volumes are stored at: /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_snapshot.csv"
+
+echo -e "\nGenerating list of volumes which are in available state...\n";
+sleep 2;
+while read volume_details;
+do
+				volume_status=`echo $volume_details | awk -F',' '{print $2}'`;
+				#echo $volume_status;
+				if [ "$volume_status" == "available" ];then
+								echo $volume_details | tee -a /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume.csv;
+				fi
+done < /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_volume.csv;
+#echo "Formated output of all volumes with available state are stored at: /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume.csv"
+
+echo -e "\nGenerating list of volumes which are in available state & have no source snapshot...\n";
+sleep 2;
+while read available_volume_details;
+do
+				volume_source_snapshot=`echo $available_volume_details | awk -F',' '{print $NF}'`;
+				if [ "$volume_source_snapshot" == "None" ];then
+								echo $available_volume_details | tee -a /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume_with_no_source_snapshot.csv
+				fi
+done < /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume.csv;
+#echo "Formated output of all volume with available state & with no source snapshot are stored at: /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume_with_no_source_snapshot.csv"
+
+echo -e "\nGenerating list of volumes that comes under scenario one...\n";
+sleep 2;
+while read available_volume_with_no_source_snapshot_details;
+do
+				volume_id=`echo $available_volume_with_no_source_snapshot_details | awk -F',' '{print $1}'`;
+				cat /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_snapshot.csv | awk -F',' '{print $4}' | grep -w $volume_id > /dev/null;
+				if [ $? -ne 0 ];then
+								echo "$volume_id" | tee -a /home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_one_volume.csv
+				fi
+done < /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume_with_no_source_snapshot.csv;
+#echo -e "\n\nScenario 1 volumes which can be deleted are stored at: /home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_one_volume.csv\n\n"
+
+# To list the volumes that comes under scenario two
+
+echo -e "\nGenerating list of volumes which are in available state & have source snapshot...\n";
+sleep 2;
+while read available_volume_details;
+do
+				volume_source_snapshot=`echo $available_volume_details | awk -F',' '{print $NF}'`;
+				if [ "$volume_source_snapshot" != "None" ];then
+								echo $available_volume_details | tee -a /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume_with_source_snapshot.csv
+				fi
+done < /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume.csv;
+#echo "Formated output of all volume with available state & with a source snapshot are stored at: /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume_with_source_snapshot.csv"
+
+echo -e "\nGenerating list of volumes that come under scenario two...\n";
+sleep 2;
+while read available_volume_with_source_snapshot_details;
+do
+				volume_id=`echo $available_volume_with_source_snapshot_details | awk -F',' '{print $1}'`;
+				cat /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_snapshot.csv | awk -F',' '{print $4}' | grep -w $volume_id > /dev/null;
+				if [ $? -ne 0 ];then
+								echo "$volume_id" | tee -a /home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_two_volume.csv
+				fi
+done < /home/stack/aru_bkp/ganesh/junk_volume_deletion/available_volume_with_source_snapshot.csv;
+#echo -e "\n\nScenario 2 volumes which can be deleted are stored at: /home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_two_volume.csv\n\n"
+
+# To list the snapshots using which no volumes are created and we call delete these snapshots.
+
+echo -e "\nGenerating the list of Snapshots using which no volumes were created and these snapshots can be deleted...\n";
+sleep 2;
+while read snapshot_details;
+do
+				snapshot_id=`echo $snapshot_details | awk -F',' '{print $1}'`;
+				cat /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_volume.csv | awk -F',' '{print $5}' | grep -w $snapshot_id > /dev/null;
+				if [ $? -ne 0 ];then
+								echo "$snapshot_id" | tee -a /home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_three_snapshot.csv
+				fi
+done < /home/stack/aru_bkp/ganesh/junk_volume_deletion/all_snapshot.csv
+#echo -e "\n\nScenario 1 snapshots which can be deleted are stored at: /home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_one_snapshot.csv\n\n";
+
+## Location of formated data:
+echo -e "\n\nOutput Data:";
+echo -e "\nScenario 1 volumes which can be deleted are stored at:\n/home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_one_volume.csv"
+echo -e "\nScenario 2 volumes which can be deleted are stored at:\n/home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_two_volume.csv"
+echo -e "\nScenario 3 snapshots which can be deleted are stored at:\n/home/stack/aru_bkp/ganesh/junk_volume_deletion/scenario_three_snapshot.csv";
+
