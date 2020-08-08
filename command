@@ -40,3 +40,8 @@
  systemctl status openstack-cinder-scheduler.service
  systemctl status openstack-cinder-api.service
  systemctl status openstack-cinder-volume
+###########################################################################
+sed -i 's/172.16.50.6:\/NFS2/172.16.50.7:\/NFS2/g'  /etc/fstab
+sed -i 's/172.16.50.6:\/NFS3/172.16.50.8:\/NFS3/g'  /etc/fstab
+sed -i 's/172.16.50.6:\/NFS4/172.16.50.9:\/NFS4/g'  /etc/fstab
+#################################################################################
