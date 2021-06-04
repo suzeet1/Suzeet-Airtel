@@ -1,4 +1,10 @@
- for i in `seq 151 241`; do ping -c 1 10.3.160.$i |grep 64\ bytes 2> /dev/null & done &
+
+##How to uncomment/comment line###################
+Uncomment==>sed -i '/[/]dev/ s/^#//' fstab
+comment==>sed -i '/[/]dev/ s/^/#/' fstab
+########################
+
+for i in `seq 151 241`; do ping -c 1 10.3.160.$i |grep 64\ bytes 2> /dev/null & done &
  for i in `seq 11 250`; do ping -c 1 10.107.146.$i | grep  64\ byte; done
  ============================Ansible Playbook=========================================
  [root@jump-server mobinet]# cat copy.yaml
