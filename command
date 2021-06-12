@@ -1,4 +1,10 @@
 
+################Get Lun number on hpe3par that is host have do sanzoning. or not#########################################
+1.curl -i https://x.x.x.x:8080/api/v1/credentials -X POST -H "Content-Type: application/json" -H "Accept: application/json" -H "User-Agent: python-3parclient" -d '{"password": "xxxx", "user": "xxxxx"}'
+
+2.curl https://XXXX:8080/api/v1/hosts -X GET -H "X-Hp3Par-Wsapi-Sessionkey: 0-b949096c362346f41a37beb2e849f0ad-6480665c" -H "Accept: application/json" -H "UserAgent: python-3parclient" -k  | python -m json.tool > /tmp/NIC-hpe3par-wwn.txt
+
+
 ##How to uncomment/comment line###################
 Uncomment==>sed -i '/[/]dev/ s/^#//' fstab
 comment==>sed -i '/[/]dev/ s/^/#/' fstab
