@@ -1,0 +1,66 @@
+--------------------+
+[stack@movl-director ~]$ neutron net-create GEO_NFS_2 --provider:network_type vlan --provider:physical_network provider --provider:segmentation_id 411
+neutron CLI is deprecated and will be removed in the future. Use openstack CLI instead.
+Created a new network:
++---------------------------+--------------------------------------+
+| Field                     | Value                                |
++---------------------------+--------------------------------------+
+| admin_state_up            | True                                 |
+| availability_zone_hints   |                                      |
+| availability_zones        |                                      |
+| created_at                | 2021-07-15T08:44:43Z                 |
+| description               |                                      |
+| id                        | bfc0da27-bb2c-4829-a7b3-8abc206535ff |
+| ipv4_address_scope        |                                      |
+| ipv6_address_scope        |                                      |
+| is_default                | False                                |
+| l2_adjacency              | True                                 |
+| mtu                       | 9000                                 |
+| name                      | GEO_NFS_2                            |
+| port_security_enabled     | True                                 |
+| project_id                | 65183e86daa64624a9c0da384c1db758     |
+| provider:network_type     | vlan                                 |
+| provider:physical_network | provider                             |
+| provider:segmentation_id  | 411                                  |
+| qos_policy_id             |                                      |
+| revision_number           | 3                                    |
+| router:external           | False                                |
+| shared                    | False                                |
+| status                    | ACTIVE                               |
+| subnets                   |                                      |
+| tags                      |                                      |
+| tenant_id                 | 65183e86daa64624a9c0da384c1db758     |
+| updated_at                | 2021-07-15T08:44:45Z                 |
++---------------------------+--------------------------------------+
+
+
+
+[stack@movl-director ~]$ neutron subnet-create GEO_NFS_2  172.16.27.0/24  --name Subnet-GEO_NFS_2 --gateway 172.16.27.1 --disable-dhcp --allocation-pool start=172.16.27.10,end=172.16.27.254
+neutron CLI is deprecated and will be removed in the future. Use openstack CLI instead.
+Created a new subnet:
++-------------------+---------------------------------------------------+
+| Field             | Value                                             |
++-------------------+---------------------------------------------------+
+| allocation_pools  | {"start": "172.16.27.10", "end": "172.16.27.254"} |
+| cidr              | 172.16.27.0/24                                    |
+| created_at        | 2021-07-15T08:50:04Z                              |
+| description       |                                                   |
+| dns_nameservers   |                                                   |
+| enable_dhcp       | False                                             |
+| gateway_ip        | 172.16.27.1                                       |
+| host_routes       |                                                   |
+| id                | 27d674eb-d7c0-4d86-879e-644610991139              |
+| ip_version        | 4                                                 |
+| ipv6_address_mode |                                                   |
+| ipv6_ra_mode      |                                                   |
+| name              | Subnet-GEO_NFS_2                                  |
+| network_id        | bfc0da27-bb2c-4829-a7b3-8abc206535ff              |
+| project_id        | 65183e86daa64624a9c0da384c1db758                  |
+| revision_number   | 0                                                 |
+| segment_id        |                                                   |
+| service_types     |                                                   |
+| subnetpool_id     |                                                   |
+| tags              |                                                   |
+| tenant_id         | 65183e86daa64624a9c0da384c1db758                  |
+| updated_at        | 2021-07-15T08:50:04Z                              |
++-------------------+---------------------------------------------------+
