@@ -1,0 +1,254 @@
+Document Created by Suzeet - Sep 22, 2021
+=========================================
+The general procedure for replacing an OSD involves removing the OSD from the storage
+cluster, replacing the drive and then recreating the OSD.
+
+Problem Description - 
+   Environment - Ceph Storage 4
+   Issue - Replace Faulty OSD Disk in ICTA (Srilank)
+   Solution - Remove faulty osd disk and add new disk
+
+Assumptions -
+   Initial Setup - Replacing a failed OSD disk
+   ===================================================
+Prerequisites
+● A running Red Hat Ceph Storage cluster.
+● A failed disk.
+
+Procedure
+
+Set flag in ceph cluster
+
+#​ ceph balancer off
+#​ ceph osd_set_noscrub
+#​ ceph osd_set_nodeep-scrub
+
+1. Check storage cluster health:
+
+[root​ @mon​ ~]​ # ceph health
+
+2. Identify the OSD location in the CRUSH hierarchy:]
+
+[root​ @mon​ ~]​ # ceph osd tree | grep -i down
+systemctl​ start ceph-osd​ @OSD_ID
+
+If the command indicates that the OSD is already running, there might be a heartbeat or
+networking issue. If you cannot restart the OSD, then the drive might have failed.
+
+4. For containerized deployments of Ceph, try to start the OSD container by referencing
+the drive associated with the OSD:
+
+#systemctl​ start ceph-osd​ @OSD_DRIVE
+
+If the command indicates that the OSD is already running, there might be a heartbeat or
+networking issue. If you cannot restart the OSD, then the drive might have failed.
+
+5. ​ Check the failed OSD’s mount point:
+[root​ @osd​ ~]​ # df -h
+
+6. Stop the OSD process:
+systemctl​ stop ceph-osd​ @OSD_ID
+
+For containerized deployments of Ceph, stop the OSD container by referencing the drive
+associated with the OSD:
+
+systemctl​ stop ceph-osd​ @OSD_DRIVE
+7. Remove the OSD out of the storage cluster:
+
+ceph osd ​ out​ OSD_IDEnsure the failed OSD is backfilling:
+
+[root​ @osd​ ~]​ # ceph -w
+
+8. Remove the OSD from the CRUSH Map:
+ceph osd crush ​ remove​ osd.OSD_ID
+
+9. Remove the OSD’s authentication keys:
+
+ceph auth ​ del​ osd.OSD_ID
+10. Verify that the keys for the OSD are not listed:
+[root​ @osd​ ~]​ # ceph auth list
+
+11. Remove the OSD from the storage cluster:
+ceph​ ​ osd​ ​ rm​ ​ osd​ .OSD_ID
+
+12. Unmount the failed drive path:
+umount /var/​lib​/ceph​/osd​/CLUSTER_NAME​-OSD_ID
+
+Example
+[root​ @osd​ ~]​ # umount /var/lib/ceph/osd/ceph-0
+
+13. Replace the physical drive. Refer to the hardware vendor’s documentation for the node.
+If the drive is hot swappable, simply replace the failed drive with a new drive. If the drive is
+NOT hot swappable and the node contains multiple OSDs, you MIGHT need to bring the
+node down to replace the physical drive. If you need to bring the node down temporarily, you
+might set the cluster to noout to prevent backfilling:
+
+Example
+[root​ @osd​ ~]​ # ceph osd set noout
+
+Once you replace the drive and you bring the node and its OSDs back online, remove the
+noout setting:
+
+Example
+[root​ @osd​ ~]​ # ceph osd unset noout
+Allow the new drive to appear under the /dev/ directory and make a note of the drive path
+before proceeding further.
+
+######################################################
+Adding a Ceph OSD using the command-line interface   #
+######################################################
+
+IMPORTANT
+The ceph-disk command is deprecated. The ceph-volume command is now the preferred method for deploying OSDs from the command-line interface. Currently, the ceph-volume command only supports the lvm plugin. Red Hat will provide examples throughout this guide using both commands as a reference, allowing time for storage administrators to convert any custom scripts that rely on ceph-disk to ceph-volume instead.
+
+Procedure
+
+1. Install ceph-volume packages.Copy the packages form ceph-osd12 server.
+
+Create the /etc/ceph/ directory:
+
+[root@osd ~]# mkdir /etc/ceph
+On the new OSD node, copy the Ceph administration keyring and configuration files from one of the Ceph Monitor nodes:
+
+Syntax
+==============================================================================================
+scp USER_NAME @ MONITOR_HOST_NAME :/etc/ceph/CLUSTER_NAME.client.admin.keyring /etc/ceph
+scp USER_NAME @ MONITOR_HOST_NAME :/etc/ceph/CLUSTER_NAME.conf /etc/ceph
+==============================================================================================
+Example
+[root@osd ~]# scp root@node1:/etc/ceph/ceph.client.admin.keyring /etc/ceph/
+[root@osd ~]# scp root@node1:/etc/ceph/ceph.conf /etc/ceph/
+
+2 Prepare the OSDs.
+
+
+$ ceph-volume lvm prepare --filestore --data /dev/sd{X} --journal /dev/sdl{X}  
+Here the osd disk is normal disk. I don't have to create lvm.
+
+
+==================================================================================================================================================
+[root@cephosd-12 ~]# ceph-volume lvm prepare --filestore --data /dev/sdh --journal /dev/sdl2
+Running command: /bin/ceph-authtool --gen-print-key
+Running command: /bin/ceph --cluster ceph --name client.bootstrap-osd --keyring /var/lib/ceph/bootstrap-osd/ceph.keyring -i - osd new 966845f9-4ed6-4537-9d44-5f86be11fdad
+Running command: /sbin/vgcreate --force --yes ceph-adfc4910-a753-410f-a3cb-77eee630fdcf /dev/sdh
+ stdout: Physical volume "/dev/sdh" successfully created.
+ stdout: Volume group "ceph-adfc4910-a753-410f-a3cb-77eee630fdcf" successfully created
+Running command: /sbin/lvcreate --yes -l 953861 -n osd-data-966845f9-4ed6-4537-9d44-5f86be11fdad ceph-adfc4910-a753-410f-a3cb-77eee630fdcf
+ stdout: Wiping xfs signature on /dev/ceph-adfc4910-a753-410f-a3cb-77eee630fdcf/osd-data-966845f9-4ed6-4537-9d44-5f86be11fdad.
+ stdout: Logical volume "osd-data-966845f9-4ed6-4537-9d44-5f86be11fdad" created.
+Running command: /bin/ceph-authtool --gen-print-key
+Running command: /sbin/mkfs -t xfs -f -i size=2048 /dev/ceph-adfc4910-a753-410f-a3cb-77eee630fdcf/osd-data-966845f9-4ed6-4537-9d44-5f86be11fdad
+ stdout: meta-data=/dev/ceph-adfc4910-a753-410f-a3cb-77eee630fdcf/osd-data-966845f9-4ed6-4537-9d44-5f86be11fdad isize=2048   agcount=4, agsize=244188416 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0, sparse=0
+data     =                       bsize=4096   blocks=976753664, imaxpct=5
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal log           bsize=4096   blocks=476930, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+Running command: /bin/mount -t xfs -o noatime,largeio,inode64,swalloc /dev/ceph-adfc4910-a753-410f-a3cb-77eee630fdcf/osd-data-966845f9-4ed6-4537-9d44-5f86be11fdad /var/lib/ceph/osd/ceph-55
+Running command: /sbin/restorecon /var/lib/ceph/osd/ceph-55
+Running command: /bin/chown -R ceph:ceph /dev/sdl2
+Running command: /bin/ln -s /dev/sdl2 /var/lib/ceph/osd/ceph-55/journal
+Running command: /bin/ceph --cluster ceph --name client.bootstrap-osd --keyring /var/lib/ceph/bootstrap-osd/ceph.keyring mon getmap -o /var/lib/ceph/osd/ceph-55/activate.monmap
+ stderr: 2021-09-21 23:09:23.863 7f315bb8a700 -1 auth: unable to find a keyring on /etc/ceph/ceph.client.bootstrap-osd.keyring,/etc/ceph/ceph.keyring,/etc/ceph/keyring,/etc/ceph/keyring.bin,: (2) No such file or directory
+2021-09-21 23:09:23.863 7f315bb8a700 -1 AuthRegistry(0x7f31540678a8) no keyring found at /etc/ceph/ceph.client.bootstrap-osd.keyring,/etc/ceph/ceph.keyring,/etc/ceph/keyring,/etc/ceph/keyring.bin,, disabling cephx
+ stderr: got monmap epoch 10
+Running command: /bin/chown -h ceph:ceph /var/lib/ceph/osd/ceph-55/journal
+Running command: /bin/chown -R ceph:ceph /dev/sdl2
+Running command: /bin/chown -R ceph:ceph /var/lib/ceph/osd/ceph-55/
+Running command: /bin/ceph-osd --cluster ceph --osd-objectstore filestore --mkfs -i 55 --monmap /var/lib/ceph/osd/ceph-55/activate.monmap --keyfile - --osd-data /var/lib/ceph/osd/ceph-55/ --osd-journal /var/lib/ceph/osd/ceph-55/journal --osd-uuid 966845f9-4ed6-4537-9d44-5f86be11fdad --setuser ceph --setgroup ceph
+ stderr: 2021-09-21 23:09:24.332 7f7811656a80 -1 auth: unable to find a keyring on /var/lib/ceph/osd/ceph-55//keyring: (2) No such file or directory
+ stderr: 2021-09-21 23:09:24.332 7f7811656a80 -1 auth: unable to find a keyring on /var/lib/ceph/osd/ceph-55//keyring: (2) No such file or directory
+ stderr: 2021-09-21 23:09:24.332 7f7811656a80 -1 auth: unable to find a keyring on /var/lib/ceph/osd/ceph-55//keyring: (2) No such file or directory
+ stderr: 2021-09-21 23:09:24.638 7f7811656a80 -1 journal check: ondisk fsid 82629c38-2e4f-40c9-ba8f-88273ac8593f doesn't match expected 966845f9-4ed6-4537-9d44-5f86be11fdad, invalid (someone else's?) journal
+ stderr: 2021-09-21 23:09:24.798 7f7811656a80 -1 journal do_read_entry(4096): bad header magic
+ stderr: 2021-09-21 23:09:24.798 7f7811656a80 -1 journal do_read_entry(4096): bad header magic
+Running command: /bin/ceph-authtool /var/lib/ceph/osd/ceph-55/keyring --create-keyring --name osd.55 --add-key AQDAGEph4nrRKBAAwRCjfqgBko/WIxRKzF0tBQ==
+ stdout: creating /var/lib/ceph/osd/ceph-55/keyring
+ stdout: added entity osd.55 auth(key=AQDAGEph4nrRKBAAwRCjfqgBko/WIxRKzF0tBQ==)
+Running command: /bin/chown -R ceph:ceph /var/lib/ceph/osd/ceph-55/keyring
+--> ceph-volume lvm prepare successful for: /dev/sdh
+[root@cephosd-12 ~]#
+===========================================================================================================================================
+
+3.Set the noup option:
+[root@osd ~]# ceph osd set noup
+
+4.Activate the new OSD:
+
+[root@cephosd-12 heat-admin]# ceph-volume lvm activate --filestore 55 966845f9-4ed6-4537-9d44-5f86be11fdad
+Running command: /bin/chown -R ceph:ceph /var/lib/ceph/osd/ceph-55
+Running command: /bin/ln -snf /dev/sdl2 /var/lib/ceph/osd/ceph-55/journal
+Running command: /bin/chown -R ceph:ceph /dev/sdl2
+Running command: /bin/systemctl enable ceph-volume@lvm-55-966845f9-4ed6-4537-9d44-5f86be11fdad
+ stderr: Created symlink from /etc/systemd/system/multi-user.target.wants/ceph-volume@lvm-55-966845f9-4ed6-4537-9d44-5f86be11fdad.service to /usr/lib/systemd/system/ceph-volume@.service.
+Running command: /bin/systemctl enable --runtime ceph-osd@55
+ stderr: Created symlink from /run/systemd/system/multi-user.target.wants/ceph-osd@55.service to /etc/systemd/system/ceph-osd@.service.
+Running command: /bin/systemctl start ceph-osd@55
+--> ceph-volume lvm activate successful for osd ID: 55
+
+5.Unset the noup option:
+[root@osd ~]# ceph osd unset noup
+
+6.Add the OSD to the CRUSH map
+
+#ceph osd crush add osd.55 0.0 root=default rack=rack3 host=cephosd-12
+
+7. Here weight is "0". now we have to increase weight..
+9        32.73198         host cephosd-12
+ 10   hdd   3.63689             osd.10          up  1.00000 1.00000
+ 21   hdd   3.63689             osd.21          up  1.00000 1.00000
+ 33   hdd   3.63689             osd.33          up  1.00000 1.00000
+ 45   hdd   3.63689             osd.45          up  0.84999 1.00000
+ 55   hdd         0             osd.55          up  1.00000 1.00000
+ 66   hdd   3.63689             osd.66          up  1.00000 1.00000
+ 76   hdd   3.63689             osd.76          up  1.00000 1.00000
+ 87   hdd   3.63689             osd.87          up  1.00000 1.00000
+ 99   hdd   3.63689             osd.99          up  1.00000 1.00000
+109   hdd   3.63689             osd.109         up  1.00000 1.00000
+
+7. increase weight..
+#ceph osd crush reweight osd.55 0.1
+
+
+###############################Thanks#############################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
