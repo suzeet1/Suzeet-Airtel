@@ -5,7 +5,7 @@ cluster, replacing the drive and then recreating the OSD.
 
 Problem Description - 
    Environment - Ceph Storage 4
-   Issue - Replace Faulty OSD Disk in ICTA (Srilank)
+   Issue - Replace Faulty OSD Disk in ICTA (Srilnka)
    Solution - Remove faulty osd disk and add new disk
 
 Assumptions -
